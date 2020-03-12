@@ -16,14 +16,16 @@
 #
 
 # to enable debug: make CFLAGS=-DDEBUG
+# to build stripped static: make LDFLAGS="-static -s"
 
 override CFLAGS+=-Wall -Wpedantic -Werror -Os -std=gnu11
 
-OBJECTS=main.o
+OBJECTS=trigger.o scan.o
 
-pspy-lite: $(OBJECTS)
-	$(CC) -o $@ $(OBJECTS)
+NAME=pspy-lite
+
+$(NAME): $(OBJECTS)
 
 .PHONY: clean
 clean:
-	rm -f pspy-lite $(OBJECTS) 
+	rm -f $(NAME) $(OBJECTS)
