@@ -22,24 +22,22 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <time.h>
-#include <string.h>
 #include <errno.h>
 
 #include "pspy-lite.h"
 
 /*
-  list of directories to watch for files being opened. it appears the
-  only important one is /etc as it has /etc/ld.so.cache which is
-  opened each time a library is loaded.
- */
-const static char* g_c_watched_dirs[] = {
-  "/etc",
-  "/tmp",
+  list of files/directories to watch for files being opened. it
+  appears the most important one is /etc/ld.so.cache which is opened
+  each time a library is loaded.
+*/
+const static char* g_c_watches[] = {
+  "/etc/ld.so.cache",
 };
 
-#define NUM_WATCH_DIR (sizeof(g_c_watched_dirs)/sizeof(char*))
+#define NUM_WATCHES (sizeof(g_c_watches)/sizeof(char*))
 
-static int g_i_wds[NUM_WATCH_DIR];
+static int g_i_wds[NUM_WATCHES];
 
 bool process_watch_events(int i_watch_fd) {
   uint8_t ui_events[4096]
@@ -59,19 +57,19 @@ bool process_watch_events(int i_watch_fd) {
     p_s_event = (const struct inotify_event *) ptr;
 
 #if defined(DEBUG)
-    /* Print the name of the watched directory */
-    for (int i = 0; i < NUM_WATCH_DIR; i++) {
+    for (int i = 0; i < NUM_WATCHES; i++) {
       if (g_i_wds[i] == p_s_event->wd) {
-        DEBUG_PRINTF("%s/", g_c_watched_dirs[i]);
+        DEBUG_PRINTF("%s", g_c_watches[i]);
         break;
       }
     }
 
-    /* Print the name of the file */
     if (p_s_event->len) {
-      DEBUG_PRINTF("%s %s\n",
+      DEBUG_PRINTF("/%s %s\n",
                    p_s_event->name,
                    p_s_event->mask & IN_ISDIR ? "[DIR]" : "[FILE]");
+    } else {
+      DEBUG_PRINTF("\n");
     }
 #endif
 
@@ -91,20 +89,17 @@ bool trigger(void) {
     return false;
   }
 
-  for (int i = 0; i < NUM_WATCH_DIR; i++) {
-    g_i_wds[i] = inotify_add_watch(i_watcher_fd, g_c_watched_dirs[i], IN_OPEN);
+  for (int i = 0; i < NUM_WATCHES; i++) {
+    g_i_wds[i] = inotify_add_watch(i_watcher_fd, g_c_watches[i], IN_OPEN);
     if (g_i_wds[i] == -1) {
+      fprintf(stderr,
+              "unable to watch: '%s', could miss proceses.\n",
+              g_c_watches[i]);
       if (errno == ENOMEM) {
         fprintf(stderr,
-                "unable to watch: %s"
-                ", could miss proceses.\n"
-                "please increase /proc/sys/fs/inotify/max_user_watches\n",
-                g_c_watched_dirs[i]);
+                "please increase /proc/sys/fs/inotify/max_user_watches\n");
       } else {
-        fprintf(stderr,
-                "unable to watch: '%s', could miss processes: %s\n",
-                g_c_watched_dirs[i],
-                strerror(errno));
+        PERROR();
       }
       /* pause to let user acknowledge error */
       sleep(1);
@@ -116,6 +111,7 @@ bool trigger(void) {
     .tv_nsec=(g_ui_interval * 1000000) % 1000000000,
   };
 
+  /* g_b_exit will be set by ctrl-c */
   while (!g_b_exit) {
     struct pollfd s_pollfd = { .fd=i_watcher_fd, .events=POLLIN };
     switch (ppoll(&s_pollfd, 1, &s_sleep, NULL)) {
@@ -125,16 +121,16 @@ bool trigger(void) {
       }
       PERROR();
       goto done;
-    case 0:
+    case 0: /* timeout */
       scan_procfs();
       continue;
-    case 1:
+    case 1: /* 1 fd ready for reading */
       if (!process_watch_events(i_watcher_fd)) {
         goto done;
       }
       continue;
     default:
-      fprintf(stderr, __FILE__ ":" str(__LINE__) ": internal error detected\n");
+      fprintf(stderr, __FILE__ ":" str(__LINE__) ": internal error\n");
       goto done;
     }
   }

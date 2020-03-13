@@ -172,6 +172,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  printf("pspy-lite: the low fat pspy\n"
+         "Copyright Karim Kanso 2020. All rights reserved.\n");
 
   if (!init()) {
     fprintf(stderr, "failed to initilize\n");
@@ -179,6 +181,11 @@ int main(int argc, char** argv) {
   }
 
   if (signal(SIGINT, &signal_handler) == SIG_ERR) {
+    PERROR();
+    goto done;
+  }
+
+  if (signal(SIGTERM, &signal_handler) == SIG_ERR) {
     PERROR();
     goto done;
   }

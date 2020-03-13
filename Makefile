@@ -15,7 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# to enable debug: make CFLAGS=-DDEBUG
+# to enable debug statements: make CFLAGS=-DDEBUG
+# to build standard production: make LDFLAGS=-s
 # to build stripped static: make LDFLAGS="-static -s"
 
 override CFLAGS+=-Wall -Wpedantic -Werror -Os -std=gnu11
