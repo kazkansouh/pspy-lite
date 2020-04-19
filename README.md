@@ -1,5 +1,7 @@
 # pspy-lite: featherweight process spy
 
+<img align="right" src="https://github.com/kazkansouh/pspy-lite/raw/master/pspy-lite.svg?sanitize=true" height="600" >
+
 Lightweight re-implementation of [`pspy`][pspy] in `C`. It performs
 the same core function of monitoring processes without root
 permissions but with a binary less than 10% of it size.
@@ -22,7 +24,7 @@ produces a binary of about *15KiB*), where `-s` strips all info:
     ```
 
 * To produce a static binary that has been stripped (for me, this is a
-little less than *900KiB*, but you mileage will vary based on your
+little less than *900KiB*, but your mileage will vary based on your
 `libc`):
 
     ```sh
