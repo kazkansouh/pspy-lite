@@ -48,8 +48,11 @@ extern bool g_b_exit;
 /* enable printing of coloured output */
 extern bool g_b_colour;
 
-/* duration between scanning procfs */
+/* duration between scanning procfs milliseconds */
 extern uint32_t g_ui_interval;
+
+/* duration delay after fd event detected microseconds */
+extern uint32_t g_ui_delay;
 
 /* enable showing ppid of the process */
 extern bool g_b_ppid;

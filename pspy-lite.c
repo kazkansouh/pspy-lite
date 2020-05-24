@@ -38,6 +38,7 @@
 #define MAX_PID_FILE "/proc/sys/kernel/pid_max"
 #define MAX_CMD_LINE 125
 #define INTERVAL     55
+#define DELAY        0
 
 #define IS_FLAG(arg,val) (strcmp(arg, val) == 0)
 #define IS_ARG(arg,val)                                                 \
@@ -60,6 +61,9 @@ bool g_b_colour = true;
 
 /* duration between scanning procfs */
 uint32_t g_ui_interval = INTERVAL;
+
+/* duration between scanning procfs */
+uint32_t g_ui_delay = DELAY;
 
 /* enable showing ppid of the process */
 bool g_b_ppid = false;
@@ -105,7 +109,8 @@ void signal_handler(int i_signum) {
 
 void show_help(const char* p_c_name) {
   printf("usage: %s [--no-colour|-n] [--truncate=INT|-t=INT] "
-                   "[--interval=INT|-i=INT] [--ppid|-p]\n"
+                   "[--interval=INT|-i=INT] [--ppid|-p] "
+                   "[--delay=INT]\n"
          "\n"
          "where\n"
          "  --no-colour     do not colour code according to uid\n"
@@ -113,13 +118,16 @@ void show_help(const char* p_c_name) {
          "                  cmdline (default: %d)\n"
          "  --interval=INT  how often to scan the /proc directory in ms\n"
          "                  (default: %d)\n"
+         "  --delay=INT     insert a small delay in microseconds after fs\n"
+         "                  event (default: %d)\n"
          "  --ppid          include ppids in the output\n"
          "\n"
          "pspy-lite is based on the pspy program, but re-implemented in\n"
          "c with the goal of being lightweight, small and fast.\n",
          p_c_name,
          MAX_CMD_LINE,
-         INTERVAL);
+         INTERVAL,
+         DELAY);
 }
 
 int main(int argc, char** argv) {
@@ -160,6 +168,20 @@ int main(int argc, char** argv) {
     }
     if (IS_ARG(argv[i], "-i")) {
       if (sscanf(argv[i], "-i=%"SCNu32, &g_ui_interval) != 1) {
+        fprintf(stderr, "could not parse %s\n", argv[i]);
+        return 1;
+      }
+      continue;
+    }
+    if (IS_ARG(argv[i], "--delay")) {
+      if (sscanf(argv[i], "--delay=%"SCNu32, &g_ui_delay) != 1) {
+        fprintf(stderr, "could not parse %s\n", argv[i]);
+        return 1;
+      }
+      continue;
+    }
+    if (IS_ARG(argv[i], "-d")) {
+      if (sscanf(argv[i], "-d=%"SCNu32, &g_ui_delay) != 1) {
         fprintf(stderr, "could not parse %s\n", argv[i]);
         return 1;
       }

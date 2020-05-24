@@ -110,6 +110,10 @@ bool trigger(void) {
     .tv_sec=(g_ui_interval * 1000000) / 1000000000,
     .tv_nsec=(g_ui_interval * 1000000) % 1000000000,
   };
+  const struct timespec s_delay = {
+    .tv_sec=(g_ui_delay * 1000) / 1000000000,
+    .tv_nsec=(g_ui_delay * 1000) % 1000000000,
+  };
 
   /* g_b_exit will be set by ctrl-c */
   while (!g_b_exit) {
@@ -125,6 +129,10 @@ bool trigger(void) {
       scan_procfs();
       continue;
     case 1: /* 1 fd ready for reading */
+      if (g_ui_delay) {
+        // inject little delay
+        nanosleep(&s_delay, NULL);
+      }
       if (!process_watch_events(i_watcher_fd)) {
         goto done;
       }
